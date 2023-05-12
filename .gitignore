@@ -1,0 +1,44 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Dependency directories
+env/
+venv/
+env.bak/
+venv.bak/
+dist/
+build/
+.eggs/
+lib/
+libs/
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Compiled files
+*.pyc
+*.class
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# Miscellaneous
+.DS_Store
+*.swp
+
+# Custom
+veve/
+myenv
