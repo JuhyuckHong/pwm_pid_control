@@ -14,13 +14,22 @@ def get_current_value():
 
 def apply_control_signal(PWM, control_signal):
     global current_value
+    pwm_max = 100
+    pwm_min = 0
     if control_signal < 0:
         sign = -1
     else:
         sign = 1
-    # current_value += sign * math.sqrt(abs(control_signal)) + random.uniform(-0.5, 0.5)
-    current_value += sign * abs(control_signal) + random.uniform(-.4, .4)
-    return PWM + control_signal
+    # + random.uniform(-0.5, 0.5)
+    current_value += sign * math.sqrt(abs(control_signal))
+    # current_value += sign * abs(control_signal) # + random.uniform(-.4, .4)
+    res = PWM + control_signal
+    if res > 100:
+        res = pwm_max
+    elif res < 0:
+        res = pwm_min
+
+    return res
 
 
 class PIDController:
@@ -72,19 +81,17 @@ class PIDController:
         return control_signal
 
 
-target_pressure = 15
+target_pressure = 70
 
 # PID Controller
-pid = PIDController(Kp=1.5, Ki=0.1, Kd=0.001)
-# pid.auto_mode = True
-
+pid = PIDController(Kp=0.01, Ki=1, Kd=0.0001)
 
 # control target
 current = get_current_value()
-PWM = 10
-error_threshold = 1
+PWM = 0
+error_threshold = 0.5
 converged_time = 0
-convergence_duration = 50
+convergence_duration = 2
 
 # Initialize lists to store data for plotting
 time_values = []
@@ -104,19 +111,13 @@ while True:
     current = get_current_value()  # Measure current value
     error = target_pressure - current
 
-    time_step = random.uniform(0, 0.1)
+    time_step = random.uniform(0, 0.01)
     sleep(time_step)
 
     # Calculate the time spend whitin a step
-    time_difference = time.time() - start_time
-    print(
-        f"[time+ {time_difference: 2.1f}, \
-        step: {counter: 4.0f}] PWM: {PWM: 03.2f}, \
-        current value: {current: 03.2f}, \
-        error: {error: 03.2f}, \
-        converged: {converged_time: 01.1f}"
-    )
-    counter += time_step
+    time_diff = time.time() - start_time
+    print(f"[time+ {time_diff: 2.1f}, step: {counter: 4.0f}] PWM: {PWM: 03.2f}, current: {current: 03.2f}, error: {error: 03.2f}, converged: {converged_time: 01.1f}")
+    counter += 1
 
     # Store data for plotting
     time_values.append(counter)
@@ -125,29 +126,33 @@ while True:
     error_values.append(error)
 
     if abs(error) < error_threshold:
-        converged_time += time_difference
+        converged_time += time_diff
     else:
         converged_time = 0
 
     if converged_time >= convergence_duration:
         break
 
-# Plot the control signal, current value, and error
-plt.figure(figsize=(10, 6))
-plt.subplot(311)
-plt.plot(time_values, control_values)
-plt.xlabel('Time')
-plt.ylabel('Control Signal')
+try:
+    # Plot the control signal, current value, and error
+    plt.figure(figsize=(10, 6))
+    plt.subplot(311)
+    plt.plot(time_values, control_values)
+    plt.xlabel('Time')
+    plt.ylabel('Control Signal')
 
-plt.subplot(312)
-plt.plot(time_values, current_values)
-plt.xlabel('Time')
-plt.ylabel('Current Value')
+    plt.subplot(312)
+    plt.plot(time_values, current_values)
+    plt.xlabel('Time')
+    plt.ylabel('Current Value')
 
-plt.subplot(313)
-plt.plot(time_values, error_values)
-plt.xlabel('Time')
-plt.ylabel('Error')
+    plt.subplot(313)
+    plt.plot(time_values, error_values)
+    plt.xlabel('Time')
+    plt.ylabel('Error')
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
+
+except KeyboardInterrupt:
+    plt.close()
