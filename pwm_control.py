@@ -76,14 +76,14 @@ duty = 0
 PWM.set_duty(duty)
 
 # Set target
-target_pressure = 50
+target_pressure = int(input("target pressure(0~100): "))
 
 # Set target reaching condition
 converged_time = 0
 threshold = 1
 convergence_duration = 10
 
-pid = PIDController(Kp=1, Ki=0.5, Kd=0.2)
+pid = PIDController(Kp=1, Ki=0.0, Kd=0.0)
 
 current_pressure = PT.send_command_and_read()
 
@@ -96,6 +96,7 @@ while step := 1:
 
     # Add duty with control
     duty += control
+    duty = min(100, max(0, duty))
 
     # Set duty value to PWM generator
     PWM.set_duty(duty)
