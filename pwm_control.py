@@ -227,8 +227,8 @@ if __name__ == '__main__':
 
     # Connect pressure transmitter and set command & make CRC
     PT = PressureTransmitter(port="/dev/ttyUSB0", baudrate=9600)
-    PT.serial_connection.set_data()
-    PT.serial_connection.add_crc()
+    PT.set_data()
+    PT.add_crc()
 
     # Connect PWM Generator
     PWM = PWMGenerator(port='/dev/ttyS0', baudrate=9600)
