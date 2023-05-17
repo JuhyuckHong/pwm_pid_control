@@ -16,21 +16,14 @@ The project directory structure is as follows:
 
 ```
 pwm_pid_control
-├─ devices
-│  ├─ serial_connection.py
-│  ├─ serial_modbus.py
-│  └─ serial_ttl.py
 ├─ pid_test.py
 ├─ pwm_control.py
-├─ README.md
-└─ __init__.py
+└─ README.md
 ```
 
-- `devices/`: This directory contains modules related to serial connections.
 - `pid_test.py`: Test script/module for the PID control algorithm.
 - `pwm_control.py`: Main module for PWM control.
 - `README.md`: Markdown file providing information and documentation.
-- `__init__.py`: Empty file indicating a Python package.
 
 ## Dependencies
 

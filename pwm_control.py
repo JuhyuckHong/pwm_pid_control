@@ -8,15 +8,15 @@ import re
 def PressureTransmitter(port='dev/ttyUSB0', baudrate=9600):
 
     serial_connection = serial.Serial(port=port,
-                                      baudrate=baudrate,                
+                                      baudrate=baudrate,
                                       parity=serial.PARITY_NONE,
                                       stopbits=serial.STOPBITS_ONE,
                                       bytesize=serial.EIGHTBITS,
                                       timeout=1)
     machine_addr=b'\x01'
-    data_addr=b'\x02'
+    data_addr=b'\x01'
     data = machine_addr + b'\x03' + b'\x00' + data_addr + b'\x00\x01'
-   
+
     # Calculate the CRC16 value for the Modbus RTU message
     crc16 = crcmod.predefined.Crc('modbus')
     # Updates the CRC16 checksum with the data
@@ -32,12 +32,12 @@ def PressureTransmitter(port='dev/ttyUSB0', baudrate=9600):
     response = serial_connection.read(7)
     _, _, _, value, _ = struct.unpack('>BBBhH', response)
 
-    return value
+    return value/10
 
 
 def PWMGenerator(input_duty, port='dev/ttyUSB0', baudrate=9600):
     serial_connection = serial.Serial(port=port,
-                                      baudrate=baudrate,                
+                                      baudrate=baudrate,
                                       parity=serial.PARITY_NONE,
                                       stopbits=serial.STOPBITS_ONE,
                                       bytesize=serial.EIGHTBITS,
@@ -62,7 +62,7 @@ def PWMGenerator(input_duty, port='dev/ttyUSB0', baudrate=9600):
     duty = f"D{duty.zfill(3)}".encode('utf-8')
     # Write duty
     serial_connection.write(duty)
-    return duty
+    return input_duty
 
 class PIDController:
     def __init__(self, Kp, Ki, Kd):
@@ -73,16 +73,7 @@ class PIDController:
         self.integral = 0
         self.max_control = 10
         self.min_control = -10
-        self.sample_time = 1
         self._last_time = None
-
-    @property
-    def sample_time(self):
-        return self.sample_time
-
-    @sample_time.setter
-    def sample_time(self, value):
-        self.sample_time = value
 
     def compute_control_signal(self, setpoint, measured_value):
         # Define error
@@ -143,11 +134,11 @@ if __name__ == '__main__':
     threshold = 1
     convergence_duration = 10
 
-    pid = PIDController(Kp=1, Ki=0.0, Kd=0.0)
+    pid = PIDController(Kp=0.1, Ki=0.0, Kd=0.0)
 
-    current_pressure = PT.send_command_and_read()
-
-    while step := 1:
+    current_pressure = PressureTransmitter(port="/dev/ttyUSB0", baudrate=9600)
+    step = 0
+    while True:
         # Record the starting time
         start_time = time.time()
 
@@ -171,11 +162,10 @@ if __name__ == '__main__':
 
         # See control status
         print(
-            f"[time+ {time_difference: 4.0f}, step: {step: 4.0f}] PWM: {PWM: 03.2f}, \
-            current value: {current_pressure: 03.2f}, \
-            pressure difference: {pressure_difference: 03.2f}, \
-            converged: {converged_time: 01.1f}"
-        )
+            f"[time+ {time_difference: 4.0f}, step: {step: 4.0f}] PWM: {duty: 03.2f}, \
+ current value: {current_pressure: 03.2f}, \
+ pressure difference: {pressure_difference: 03.2f}, \
+ converged: {converged_time: 01.1f}")
 
         # Stop control when reached target with threshold during set time
         if abs(pressure_difference) < threshold:
@@ -188,3 +178,4 @@ if __name__ == '__main__':
 
         # step++
         step += 1
+        time.sleep(1)
