@@ -151,7 +151,7 @@ if __name__ == '__main__':
         duty = min(100, max(0, duty))
 
         # Set duty value to PWM generator
-        duty = PWMGenerator(duty, port='/dev/ttyS0', baudrate=9600)
+        PWMGenerator(duty, port='/dev/ttyS0', baudrate=9600)
 
         # Get pressure data
         current_pressure = PressureTransmitter(port="/dev/ttyUSB0", baudrate=9600)
