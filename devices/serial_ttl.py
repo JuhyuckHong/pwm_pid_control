@@ -1,13 +1,13 @@
-from serial_connection import SerialConnection
+from .serial_connection import SerialConnection
 import serial
 import re
 import time
 
 
 class PWMGenerator(SerialConnection):
-    def __init__(self, port, baudrate, parity, stopbits, bytesize, timeout):
+    def __init__(self, port, baudrate):
         try:
-            super().__init__(port, baudrate, parity, stopbits, bytesize, timeout)
+            super().__init__(port, baudrate)
         except serial.SerialException as e:
             print(f"Serial connection error: {e}")
 

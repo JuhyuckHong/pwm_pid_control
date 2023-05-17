@@ -1,11 +1,11 @@
-from serial_connection import SerialConnection
+from .serial_connection import SerialConnection
 import crcmod.predefined
 import struct
 
 
 class PressureTransmitter(SerialConnection):
-    def __init__(self, port, baudrate, parity, stopbits, bytesize, timeout):
-        super().__init__(port, baudrate, parity, stopbits, bytesize, timeout)
+    def __init__(self, port, baudrate,):
+        super().__init__(port, baudrate)
 
     def set_data(self, machine_addr=b'\x01', data_addr=b'\x02'):
         self.data = machine_addr + b'\x03' + b'\x00' + data_addr + b'\x00\x01'
