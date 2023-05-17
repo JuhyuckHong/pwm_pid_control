@@ -2,6 +2,7 @@ import time
 import serial
 import crcmod.predefined
 import struct
+import re
 
 
 class PressureTransmitter:
@@ -38,8 +39,8 @@ class PressureTransmitter:
         self.data += crc_bytes_reversed
 
     def send_command_and_read(self):
-        self.write(self.data)
-        response = self.read(7)
+        self.serial_connection.write(self.data)
+        response = self.serial_connection.read(7)
         _, _, _, value, _ = struct.unpack('>BBBhH', response)
         return value
 
@@ -101,7 +102,7 @@ class PWMGenerator:
         # Add 'K' prefix and encode as bytes
         frequency = f"K{frequency}".encode('utf-8')
 
-        return self.write(frequency)
+        return self.serial_connection.write(frequency)
 
     def set_duty(self, input_duty):
         # Make string type
@@ -123,16 +124,16 @@ class PWMGenerator:
         # Add 'D' prefix and encode as bytes
         duty = f"D{duty.zfill(3)}".encode('utf-8')
 
-        return self.write(duty)
+        return self.serial_connection.write(duty)
 
     def read_status(self):
         while (True):
             # Send the command "READ" to the device to request data
-            self.write(b"READ")
+            self.serial_connection.write(b"READ")
             time.sleep(0.1)
             try:
                 # Read 12 bytes of data from the device
-                res = self.read(12)
+                res = self.serial_connection.read(12)
                 # Check if the first byte of the response is equal to 70 (hexadecimal value of "F")
                 if res and res[0] == 70:
                     res = res.decode()
@@ -150,7 +151,7 @@ class PWMGenerator:
             except IndexError:
                 pass
             # Close the serial connection with the device
-            self.disconnect()
+            self.serial_connection.close()
 
 
 class PIDController:
@@ -226,8 +227,8 @@ if __name__ == '__main__':
 
     # Connect pressure transmitter and set command & make CRC
     PT = PressureTransmitter(port="/dev/ttyUSB0", baudrate=9600)
-    PT.set_data()
-    PT.add_crc()
+    PT.serial_connection.set_data()
+    PT.serial_connection.add_crc()
 
     # Connect PWM Generator
     PWM = PWMGenerator(port='/dev/ttyS0', baudrate=9600)
