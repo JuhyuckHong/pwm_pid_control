@@ -1,5 +1,3 @@
-from .devices.serial_modbus import PressureTransmitter
-from .devices.serial_ttl import PWMGenerator
 import time
 
 
@@ -62,68 +60,80 @@ class PIDController:
         return control_signal
 
 
-# Connect pressure transmitter and set command & make CRC
-PT = PressureTransmitter(port="/dev/ttyUSB0", baudrate=9600)
-PT.set_data()
-PT.add_crc()
+if __name__ == '__main__':
+    if __package__ is None:
+        import sys
+        from os import path
+        print(path.dirname(path.dirname(path.abspath(__file__))))
+        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+        from devices.serial_modbus import PressureTransmitter
+        from devices.serial_ttl import PWMGenerator
+    else:
+        from .devices.serial_modbus import PressureTransmitter
+        from .devices.serial_ttl import PWMGenerator
 
-# Connect PWM Generator
-PWM = PWMGenerator(port='/dev/ttyS0', baudrate=9600)
-# Read current status
-PWM.read_status()
-# Initialize duty cycle
-duty = 0
-PWM.set_duty(duty)
+    # Connect pressure transmitter and set command & make CRC
+    PT = PressureTransmitter(port="/dev/ttyUSB0", baudrate=9600)
+    PT.set_data()
+    PT.add_crc()
 
-# Set target
-target_pressure = int(input("target pressure(0~100): "))
-
-# Set target reaching condition
-converged_time = 0
-threshold = 1
-convergence_duration = 10
-
-pid = PIDController(Kp=1, Ki=0.0, Kd=0.0)
-
-current_pressure = PT.send_command_and_read()
-
-while step := 1:
-    # Record the starting time
-    start_time = time.time()
-
-    # Derive control value
-    control = pid.compute_control_signal(target_pressure, current_pressure)
-
-    # Add duty with control
-    duty += control
-    duty = min(100, max(0, duty))
-
-    # Set duty value to PWM generator
+    # Connect PWM Generator
+    PWM = PWMGenerator(port='/dev/ttyS0', baudrate=9600)
+    # Read current status
+    PWM.read_status()
+    # Initialize duty cycle
+    duty = 0
     PWM.set_duty(duty)
 
-    # Get pressure data
+    # Set target
+    target_pressure = int(input("target pressure(0~100): "))
+
+    # Set target reaching condition
+    converged_time = 0
+    threshold = 1
+    convergence_duration = 10
+
+    pid = PIDController(Kp=1, Ki=0.0, Kd=0.0)
+
     current_pressure = PT.send_command_and_read()
-    pressure_difference = target_pressure - current_pressure
 
-    # Calculate the time spend whitin a step
-    time_difference = time.time() - start_time
+    while step := 1:
+        # Record the starting time
+        start_time = time.time()
 
-    # See control status
-    print(
-        f"[time+ {time_difference: 4.0f}, step: {step: 4.0f}] PWM: {PWM: 03.2f}, \
-        current value: {current_pressure: 03.2f}, \
-        pressure difference: {pressure_difference: 03.2f}, \
-        converged: {converged_time: 01.1f}"
-    )
+        # Derive control value
+        control = pid.compute_control_signal(target_pressure, current_pressure)
 
-    # Stop control when reached target with threshold during set time
-    if abs(pressure_difference) < threshold:
-        converged_time += time_difference
-    else:
-        converged_time = 0
+        # Add duty with control
+        duty += control
+        duty = min(100, max(0, duty))
 
-    if converged_time >= convergence_duration:
-        break
+        # Set duty value to PWM generator
+        PWM.set_duty(duty)
 
-    # step++
-    step += 1
+        # Get pressure data
+        current_pressure = PT.send_command_and_read()
+        pressure_difference = target_pressure - current_pressure
+
+        # Calculate the time spend whitin a step
+        time_difference = time.time() - start_time
+
+        # See control status
+        print(
+            f"[time+ {time_difference: 4.0f}, step: {step: 4.0f}] PWM: {PWM: 03.2f}, \
+            current value: {current_pressure: 03.2f}, \
+            pressure difference: {pressure_difference: 03.2f}, \
+            converged: {converged_time: 01.1f}"
+        )
+
+        # Stop control when reached target with threshold during set time
+        if abs(pressure_difference) < threshold:
+            converged_time += time_difference
+        else:
+            converged_time = 0
+
+        if converged_time >= convergence_duration:
+            break
+
+        # step++
+        step += 1
